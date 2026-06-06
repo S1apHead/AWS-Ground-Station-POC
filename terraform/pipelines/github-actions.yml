@@ -1,0 +1,324 @@
+name: SpaceNet Terraform CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - 'release/**'
+    paths:
+      - 'terraform/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'prod'
+        type: choice
+        options: ['prod', 'staging']
+      component:
+        description: 'Component to deploy'
+        required: true
+        default: 'all'
+        type: choice
+        options: ['all', 'security', 'data-pipeline', 'ground-segment', 'fleet-management']
+
+permissions:
+  id-token: write    # OIDC for AWS
+  contents: read
+  pull-requests: write
+
+env:
+  TF_VERSION: '1.10.0'
+  AWS_REGION: 'ap-southeast-2'
+  TF_STATE_BUCKET: 'spacenet-terraform-state'
+  TF_LOCK_TABLE:   'spacenet-terraform-locks'
+
+jobs:
+  # ── Security scan (runs on every PR/push) ──────────────────────────────────
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run tfsec
+        uses: aquasecurity/tfsec-action@v1.0.3
+        with:
+          working_directory: terraform
+          soft_fail: false
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: terraform
+          framework: terraform
+          output_format: sarif
+          download_external_modules: true
+
+  # ── Terraform validate (all components) ──────────────────────────────────────
+  validate:
+    name: Validate (${{ matrix.component }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        component:
+          - security
+          - data-pipeline
+          - ground-segment
+          - fleet-management
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform ${{ env.TF_VERSION }}
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_TERRAFORM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Init
+        working-directory: terraform/environments/prod/${{ matrix.component }}
+        run: |
+          terraform init \
+            -backend=false \
+            -no-color
+
+      - name: Terraform Validate
+        working-directory: terraform/environments/prod/${{ matrix.component }}
+        run: terraform validate -no-color
+
+      - name: Terraform fmt check
+        working-directory: terraform/environments/prod/${{ matrix.component }}
+        run: terraform fmt -check -recursive -no-color
+
+  # ── Plan (PR only) ──────────────────────────────────────────────────────────
+  plan:
+    name: Plan (${{ matrix.component }})
+    runs-on: ubuntu-latest
+    needs: [security-scan, validate]
+    if: github.event_name == 'pull_request'
+    strategy:
+      matrix:
+        component:
+          - security
+          - data-pipeline
+          - ground-segment
+          - fleet-management
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_TERRAFORM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Init
+        working-directory: terraform/environments/prod/${{ matrix.component }}
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ env.TF_STATE_BUCKET }}" \
+            -backend-config="dynamodb_table=${{ env.TF_LOCK_TABLE }}" \
+            -no-color
+
+      - name: Terraform Plan
+        id: plan
+        working-directory: terraform/environments/prod/${{ matrix.component }}
+        run: |
+          terraform plan \
+            -no-color \
+            -out=tfplan \
+            2>&1 | tee plan_output.txt
+        continue-on-error: true
+
+      - name: Comment plan on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const planOutput = fs.readFileSync(
+              'terraform/environments/prod/${{ matrix.component }}/plan_output.txt', 'utf8'
+            );
+            const truncated = planOutput.length > 65000
+              ? planOutput.substring(0, 65000) + '\n...[truncated]'
+              : planOutput;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Terraform Plan — \`${{ matrix.component }}\`\n\`\`\`hcl\n${truncated}\n\`\`\``
+            });
+
+  # ── Deploy Security (always first — other stacks depend on it) ──────────────
+  deploy-security:
+    name: Deploy Security
+    runs-on: ubuntu-latest
+    needs: [security-scan, validate]
+    if: |
+      github.ref == 'refs/heads/main' &&
+      (github.event.inputs.component == 'all' || github.event.inputs.component == 'security' ||
+       github.event_name == 'push')
+    environment:
+      name: prod-security
+      url: https://console.aws.amazon.com/securityhub
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_TERRAFORM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Init
+        working-directory: terraform/environments/prod/security
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ env.TF_STATE_BUCKET }}" \
+            -backend-config="dynamodb_table=${{ env.TF_LOCK_TABLE }}" \
+            -no-color
+
+      - name: Plan
+        working-directory: terraform/environments/prod/security
+        run: terraform plan -no-color -out=tfplan
+
+      - name: Apply
+        working-directory: terraform/environments/prod/security
+        run: terraform apply -auto-approve -no-color tfplan
+
+  # ── Deploy Data Pipeline ──────────────────────────────────────────────────
+  deploy-data-pipeline:
+    name: Deploy Data Pipeline
+    runs-on: ubuntu-latest
+    needs: [deploy-security]
+    if: |
+      github.ref == 'refs/heads/main' &&
+      (github.event.inputs.component == 'all' || github.event.inputs.component == 'data-pipeline' ||
+       github.event_name == 'push')
+    environment:
+      name: prod-data-pipeline
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_version: "${{ env.TF_VERSION }}" }
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_TERRAFORM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - run: |
+          terraform init -no-color \
+            -backend-config="bucket=${{ env.TF_STATE_BUCKET }}" \
+            -backend-config="dynamodb_table=${{ env.TF_LOCK_TABLE }}"
+          terraform plan -no-color -out=tfplan
+          terraform apply -auto-approve -no-color tfplan
+        working-directory: terraform/environments/prod/data-pipeline
+
+  # ── Deploy Ground Segment and Fleet Management in parallel ────────────────
+  deploy-ground-segment:
+    name: Deploy Ground Segment
+    runs-on: ubuntu-latest
+    needs: [deploy-data-pipeline]
+    if: |
+      github.ref == 'refs/heads/main' &&
+      (github.event.inputs.component == 'all' || github.event.inputs.component == 'ground-segment' ||
+       github.event_name == 'push')
+    environment:
+      name: prod-ground-segment
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_version: "${{ env.TF_VERSION }}" }
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_TERRAFORM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - run: |
+          terraform init -no-color \
+            -backend-config="bucket=${{ env.TF_STATE_BUCKET }}" \
+            -backend-config="dynamodb_table=${{ env.TF_LOCK_TABLE }}"
+          terraform plan -no-color -out=tfplan
+          terraform apply -auto-approve -no-color tfplan
+        working-directory: terraform/environments/prod/ground-segment
+
+  deploy-fleet-management:
+    name: Deploy Fleet Management
+    runs-on: ubuntu-latest
+    needs: [deploy-data-pipeline]
+    if: |
+      github.ref == 'refs/heads/main' &&
+      (github.event.inputs.component == 'all' || github.event.inputs.component == 'fleet-management' ||
+       github.event_name == 'push')
+    environment:
+      name: prod-fleet-management
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_version: "${{ env.TF_VERSION }}" }
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_TERRAFORM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - run: |
+          terraform init -no-color \
+            -backend-config="bucket=${{ env.TF_STATE_BUCKET }}" \
+            -backend-config="dynamodb_table=${{ env.TF_LOCK_TABLE }}"
+          terraform plan -no-color -out=tfplan
+          terraform apply -auto-approve -no-color tfplan
+        working-directory: terraform/environments/prod/fleet-management
+
+  # ── Post-deploy smoke tests ───────────────────────────────────────────────
+  smoke-tests:
+    name: Smoke Tests
+    runs-on: ubuntu-latest
+    needs: [deploy-ground-segment, deploy-fleet-management]
+    if: always() && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_TERRAFORM_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Check ECS service health
+        run: |
+          aws ecs describe-services \
+            --cluster spacenet-gs \
+            --services spacenet-gs-dataflow \
+            --query 'services[0].{running:runningCount,desired:desiredCount,status:status}' \
+            --output table
+      - name: Check Kinesis streams
+        run: |
+          for stream in spacenet-telemetry-hk spacenet-telemetry-science; do
+            STATUS=$(aws kinesis describe-stream-summary \
+              --stream-name $stream \
+              --query 'StreamDescriptionSummary.StreamStatus' \
+              --output text)
+            echo "$stream: $STATUS"
+            [ "$STATUS" = "ACTIVE" ] || exit 1
+          done
+      - name: Check EKS cluster
+        run: |
+          STATUS=$(aws eks describe-cluster \
+            --name spacenet-fleet \
+            --query 'cluster.status' \
+            --output text)
+          echo "EKS cluster: $STATUS"
+          [ "$STATUS" = "ACTIVE" ] || exit 1
