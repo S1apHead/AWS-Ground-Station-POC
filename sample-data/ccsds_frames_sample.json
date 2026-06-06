@@ -1,0 +1,72 @@
+{
+  "frames": [
+    {
+      "vc": "HOUSEKEEPING",
+      "meta": {
+        "tfvn": 0,
+        "spacecraft_id": 6699,
+        "virtual_channel": "HOUSEKEEPING",
+        "vcid": 0,
+        "mc_frame_count": 0,
+        "vc_frame_count": 0,
+        "has_ocf": false,
+        "timestamp_day": 9653,
+        "timestamp_ms": 19767000,
+        "data_field_len": 1095,
+        "crc_valid": true,
+        "frame_len": 1113
+      }
+    },
+    {
+      "vc": "SCIENCE_DATA",
+      "meta": {
+        "tfvn": 0,
+        "spacecraft_id": 6699,
+        "virtual_channel": "SCIENCE_DATA",
+        "vcid": 2,
+        "mc_frame_count": 1,
+        "vc_frame_count": 0,
+        "has_ocf": false,
+        "timestamp_day": 9653,
+        "timestamp_ms": 19767000,
+        "data_field_len": 1095,
+        "crc_valid": true,
+        "frame_len": 1113
+      }
+    }
+  ],
+  "hk_telemetry": {
+    "pwr_bus_voltage_v": 28.087,
+    "pwr_bus_current_a": 3.306,
+    "pwr_battery_soc_pct": 85.1,
+    "pwr_solar_power_w": 0.55,
+    "pwr_in_eclipse": false,
+    "thm_obc_temp_c": 20.71,
+    "thm_battery_temp_c": 17.84,
+    "thm_solar_panel_temp_c": 37.41,
+    "thm_rx_temp_c": 26.65,
+    "adc_mode": "NADIR_POINTING",
+    "adc_roll_deg": 0.0012,
+    "adc_pitch_deg": 0.0134,
+    "adc_yaw_deg": 0.0768,
+    "adc_roll_rate_dps": 0.00016,
+    "adc_pitch_rate_dps": -0.00013,
+    "obc_cpu_load_pct": 34.0,
+    "obc_mem_used_pct": 43.0,
+    "obc_uptime_s": 0,
+    "obc_mode": "NOMINAL",
+    "obc_last_cmd_apid": "0x100",
+    "com_rx_rssi_dbm": -81.1,
+    "com_tx_power_dbm": 30.46,
+    "com_tx_freq_hz": 8100000000,
+    "com_rx_freq_hz": 2025000000,
+    "com_link_quality_pct": 95.3,
+    "orb_altitude_km": 549.97,
+    "orb_velocity_km_s": 7.5932,
+    "orb_latitude_deg": 0.4625,
+    "orb_longitude_deg": -178.65,
+    "satellite_id": "SPACENET-1A",
+    "timestamp_utc": 1780766967,
+    "frame_sequence": 0
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "messages": [
+    {
+      "topic": "spacenet/satellites/SPACENET-1A/telemetry/hk",
+      "qos": 1,
+      "bytes": 801,
+      "timestamp": "2026-06-06T17:29:27.769934+00:00",
+      "payload": {
+        "schema": "hk_v1",
+        "ts": 1780766967769,
+        "satellite": "SPACENET-1A",
+        "pwr_bus_voltage_v": 27.757,
+        "pwr_bus_current_a": 3.244,
+        "pwr_battery_soc_pct": 86.2,
+        "pwr_solar_power_w": 17.45,
+        "pwr_in_eclipse": false,
+        "thm_obc_temp_c": 20.84,
+        "thm_battery_temp_c": 18.91,
+        "thm_solar_panel_temp_c": 38.87,
+        "thm_rx_temp_c": 24.51,
+        "adc_mode": "NADIR_POINTING",
+        "adc_roll_deg": 0.0437,
+        "adc_pitch_deg": -0.0267,
+        "adc_yaw_deg": -0.0261,
+        "adc_roll_rate_dps": 0.00015,
+        "adc_pitch_rate_dps": 0.00046,
+        "obc_cpu_load_pct": 15.2,
+        "obc_mem_used_pct": 44.2,
+        "obc_uptime_s": 20,
+        "obc_mode": "NOMINAL",
+        "obc_last_cmd_apid": "0x100",
+        "com_rx_rssi_dbm": -80.5,
+        "com_tx_power_dbm": 29.63,
+        "com_tx_freq_hz": 8100000000,
+        "com_rx_freq_hz": 2025000000,
+        "com_link_quality_pct": 94.9,
+        "timestamp_utc": 1780766967,
+        "frame_sequence": 2
+      }
+    },
+    {
+      "topic": "spacenet/satellites/SPACENET-1A/telemetry/power",
+      "qos": 1,
+      "bytes": 186,
+      "timestamp": "2026-06-06T17:29:27.769970+00:00",
+      "payload": {
+        "schema": "power_v1",
+        "ts": 1780766967769,
+        "satellite": "SPACENET-1A",
+        "bus_voltage_v": 27.757,
+        "bus_current_a": 3.244,
+        "battery_soc": 86.2,
+        "solar_power_w": 17.45,
+        "in_eclipse": false
+      }
+    },
+    {
+      "topic": "spacenet/satellites/SPACENET-1A/telemetry/adcs",
+      "qos": 1,
+      "bytes": 158,
+      "timestamp": "2026-06-06T17:29:27.769985+00:00",
+      "payload": {
+        "schema": "adcs_v1",
+        "ts": 1780766967769,
+        "satellite": "SPACENET-1A",
+        "mode": "NADIR_POINTING",
+        "roll_deg": 0.0437,
+        "pitch_deg": -0.0267,
+        "yaw_deg": -0.0261
+      }
+    },
+    {
+      "topic": "spacenet/satellites/SPACENET-1A/telemetry/orbital",
+      "qos": 1,
+      "bytes": 170,
+      "timestamp": "2026-06-06T17:29:27.769999+00:00",
+      "payload": {
+        "schema": "orbital_v1",
+        "ts": 1780766967769,
+        "satellite": "SPACENET-1A",
+        "altitude_km": 550.21,
+        "velocity_kms": 7.5953,
+        "latitude_deg": 4.1583,
+        "longitude_deg": -167.85
+      }
+    },
+    {
+      "topic": "spacenet/satellites/SPACENET-1A/telemetry/hk",
+      "qos": 1,
+      "bytes": 796,
+      "timestamp": "2026-06-06T17:29:27.770049+00:00",
+      "payload": {
+        "schema": "hk_v1",
+        "ts": 1780766967770,
+        "satellite": "SPACENET-1A",
+        "pwr_bus_voltage_v": 27.735,
+        "pwr_bus_current_a": 3.224,
+        "pwr_battery_soc_pct": 86.3,
+        "pwr_solar_power_w": 20.66,
+        "pwr_in_eclipse": false,
+        "thm_obc_temp_c": 24.83,
+        "thm_battery_temp_c": 18.32,
+        "thm_solar_panel_temp_c": 40.9,
+        "thm_rx_temp_c": 23.11,
+        "adc_mode": "NADIR_POINTING",
+        "adc_roll_deg": -0.0226,
+        "adc_pitch_deg": -0.0072,
+        "adc_yaw_deg": 0.022,
+        "adc_roll_rate_dps": 4e-05,
+        "adc_pitch_rate_dps": 0.00023,
+        "obc_cpu_load_pct": 22.5,
+        "obc_mem_used_pct": 49.0,
+        "obc_uptime_s": 20,
+        "obc_mode": "NOMINAL",
+        "obc_last_cmd_apid": "0x100",
+        "com_rx_rssi_dbm": -88.5,
+        "com_tx_power_dbm": 30.0,
+        "com_tx_freq_hz": 8100000000,
+        "com_rx_freq_hz": 2025000000,
+        "com_link_quality_pct": 89.3,
+        "timestamp_utc": 1780766967,
+        "frame_sequence": 2
+      }
+    }
+  ]
+}

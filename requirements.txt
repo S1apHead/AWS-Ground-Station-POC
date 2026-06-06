@@ -1,0 +1,7 @@
+boto3>=1.34.0
+paho-mqtt>=1.6.1
+construct>=2.10.68
+bitstring>=4.1.4
+numpy>=1.26.0
+rich>=13.7.0
+python-dotenv>=1.0.0

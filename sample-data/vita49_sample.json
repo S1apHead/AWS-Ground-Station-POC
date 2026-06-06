@@ -1,0 +1,66 @@
+{
+  "context_packet": {
+    "packet_type": 4,
+    "packet_count": 0,
+    "stream_id": "0xABCD1234",
+    "timestamp_s": 1780766967,
+    "timestamp_ps": 0,
+    "packet_size_words": 68,
+    "type_name": "CONTEXT",
+    "context": {
+      "rf_freq_hz": 8100000000.0,
+      "bandwidth_hz": 25000000.0,
+      "sample_rate_hz": 25000000.0,
+      "gain_db": 42.0,
+      "ref_level_dbm": -85.0,
+      "polarisation": "RHCP",
+      "satellite_id": "SPACENET-1A",
+      "ground_station": "AWS-GS-SYDNEY",
+      "contact_id": "CONTACT-2026-001"
+    }
+  },
+  "signal_packet": {
+    "packet_type": 1,
+    "packet_count": 1,
+    "stream_id": "0xABCD1234",
+    "timestamp_s": 1780766967,
+    "timestamp_ps": 749881029129,
+    "packet_size_words": 517,
+    "type_name": "SIGNAL_DATA",
+    "sample_count": 512
+  },
+  "first_8_samples": [
+    {
+      "I": -15854,
+      "Q": 13023
+    },
+    {
+      "I": -7154,
+      "Q": -17227
+    },
+    {
+      "I": 14766,
+      "Q": 4038
+    },
+    {
+      "I": -7559,
+      "Q": 9166
+    },
+    {
+      "I": -8788,
+      "Q": -10715
+    },
+    {
+      "I": 12482,
+      "Q": 7000
+    },
+    {
+      "I": -4744,
+      "Q": 15718
+    },
+    {
+      "I": -11409,
+      "Q": -12752
+    }
+  ]
+}
